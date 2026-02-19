@@ -8,13 +8,32 @@ import { ChatMessage } from "@/components/chat-message"
 import { ChatInput } from "@/components/chat-input"
 import { WelcomeScreen } from "@/components/welcome-screen"
 import { TypingIndicator } from "@/components/typing-indicator"
+import { useSpeech } from "@/hooks/use-speech"
 
 export default function Page() {
   const [input, setInput] = useState("")
+  const [isVoiceMode, setIsVoiceMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const { isListening, startListening, stopListening, speak, stopSpeaking } = useSpeech({
+    onSpeechEnd: (text) => {
+      setInput(text)
+      setIsVoiceMode(true)
+    },
+  })
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
+    onFinish: ({ message }) => {
+      if (message.role === 'assistant') {
+        const text = message.parts
+          ?.filter((p: any) => p.type === 'text')
+          .map((p: any) => p.text)
+          .join('')
+
+        if (text && isVoiceMode) speak(text)
+      }
+    }
   })
 
   const isLoading = status === "streaming" || status === "submitted"
@@ -26,12 +45,24 @@ export default function Page() {
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return
+    stopSpeaking()
+    if (!isListening) {
+      setIsVoiceMode(false)
+    }
     sendMessage({ text: input })
     setInput("")
   }
 
   const handleSuggestionClick = (text: string) => {
+    stopSpeaking()
+    setIsVoiceMode(false)
     sendMessage({ text })
+  }
+
+  const handleStartListening = () => {
+    stopSpeaking()
+    setIsVoiceMode(true)
+    startListening()
   }
 
   return (
@@ -57,6 +88,9 @@ export default function Page() {
         setInput={setInput}
         onSubmit={handleSend}
         isLoading={isLoading}
+        isListening={isListening}
+        onStartListening={handleStartListening}
+        onStopListening={stopListening}
       />
     </main>
   )

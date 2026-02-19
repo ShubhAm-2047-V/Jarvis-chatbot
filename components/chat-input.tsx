@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, Mic, MicOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ChatInputProps {
@@ -8,9 +8,20 @@ interface ChatInputProps {
   setInput: (value: string) => void
   onSubmit: () => void
   isLoading: boolean
+  isListening: boolean
+  onStartListening: () => void
+  onStopListening: () => void
 }
 
-export function ChatInput({ input, setInput, onSubmit, isLoading }: ChatInputProps) {
+export function ChatInput({
+  input,
+  setInput,
+  onSubmit,
+  isLoading,
+  isListening,
+  onStartListening,
+  onStopListening
+}: ChatInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -23,12 +34,16 @@ export function ChatInput({ input, setInput, onSubmit, isLoading }: ChatInputPro
   return (
     <div className="border-t border-border/50 bg-card/60 backdrop-blur-sm px-4 py-3 md:px-6">
       <div className="relative max-w-3xl mx-auto">
-        <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-background/80 px-4 py-2 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+        <div className={cn(
+          "flex items-end gap-2 rounded-2xl border border-border/60 bg-background/80 px-4 py-2 transition-all",
+          "focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20",
+          isListening && "border-red-500/50 ring-1 ring-red-500/20"
+        )}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message Jarvis..."
+            placeholder={isListening ? "Listening..." : "Message Jarvis..."}
             rows={1}
             disabled={isLoading}
             className={cn(
@@ -39,6 +54,21 @@ export function ChatInput({ input, setInput, onSubmit, isLoading }: ChatInputPro
             style={{ fieldSizing: "content" } as React.CSSProperties}
             aria-label="Type your message"
           />
+
+          <button
+            onClick={isListening ? onStopListening : onStartListening}
+            className={cn(
+              "flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+              isListening
+                ? "bg-red-500 text-white animate-pulse hover:bg-red-600"
+                : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+            )}
+            aria-label={isListening ? "Stop listening" : "Start listening"}
+            type="button"
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
           <button
             onClick={() => {
               if (input.trim() && !isLoading) onSubmit()

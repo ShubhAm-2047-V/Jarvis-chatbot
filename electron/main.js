@@ -20,6 +20,17 @@ function createWindow() {
 
     mainWindow.loadURL(startUrl);
 
+    mainWindow.onload = () => {
+        mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+            const allowedPermissions = ['media'];
+            if (allowedPermissions.includes(permission)) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        });
+    };
+
     mainWindow.on('closed', function () {
         mainWindow = null;
     });
